@@ -1,2 +1,2 @@
 # medical-clinic-cloud-solution
-Medical Clinic platform and cloud solution using Java Spring Boot, TypeScript, NextJS, Amazon DynamoDB, RDS, Elasticache Redis, EKS, SQS and other devops features.
+Medical Clinic platform and cloud solution using Java Spring Boot, TypeScript, NextJS, Amazon DynamoDB, RDS, Elasticache Redis, EKS, SQS, Github Actions, Jenkins and other devops features.
