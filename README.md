@@ -1,5 +1,10 @@
 # Medical Clinic - Arquitetura de Solução em Nuvem AWS
 
+### Visão Geral da Arquitetura
+A Medical Clinic utiliza uma arquitetura de microserviços moderna e distribuída, implementada na AWS, focando em alta disponibilidade, escalabilidade e segurança.
+
+![Diagrama de Arquitetura](images/medical-clinic-cloud-solution.drawio.png)
+
 ## Índice
 1. [Conceitos Fundamentais](#conceitos-fundamentais)
 2. [Visão Geral do Projeto](#visão-geral-do-projeto)
@@ -8,11 +13,6 @@
 5. [Componentes de Infraestrutura](#componentes-de-infraestrutura)
 6. [Segurança e Conformidade](#segurança-e-conformidade)
 7. [Monitoramento e Observabilidade](#monitoramento-e-observabilidade)
-
-### Visão Geral da Arquitetura
-A Medical Clinic utiliza uma arquitetura de microserviços moderna e distribuída, implementada na AWS, focando em alta disponibilidade, escalabilidade e segurança. 
-
-![Diagrama de Arquitetura](images/medical-clinic-cloud-solution.drawio.png)
 
 ## Conceitos Fundamentais
 
