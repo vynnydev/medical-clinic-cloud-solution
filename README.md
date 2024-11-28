@@ -458,6 +458,213 @@ Consome:
 - Sobrecarga de filas
 - Erros de integração
 
+# Guia de Observabilidade - Dashboards e Métricas
+
+## 1. Dashboards por Microsserviço
+
+### 1.1 Accounts Service Dashboard
+
+#### Painéis Principais:
+1. **Requests per Second (RPS)**
+   - Mostra requisições por segundo em cada endpoint
+   - Ajuda a identificar picos de tráfego
+   - Breakdown por tipo de requisição (GET, POST, etc.)
+   - Threshold recomendado: alertar se RPS > 1000
+
+2. **Authentication Success Rate**
+   - Gauge mostrando taxa de sucesso de autenticação
+   - Verde: > 95%
+   - Amarelo: 90-95%
+   - Vermelho: < 90%
+   - Importante para segurança e experiência do usuário
+
+3. **Active Sessions**
+   - Número atual de sessões ativas
+   - Útil para dimensionamento de recursos
+   - Histórico de 24h para análise de padrões
+   - Correlacionar com uso de memória
+
+#### Métricas Chave:
+```
+@Component
+public class AccountMetrics {
+    private final MeterRegistry registry;
+
+    public AccountMetrics(MeterRegistry registry) {
+        this.registry = registry;
+
+        // Contador de requisições
+        Counter.builder("accounts.requests.total")
+              .tag("endpoint", "/login")
+              .description("Total number of requests")
+              .register(registry);
+
+        // Gauge para sessões ativas
+        Gauge.builder("accounts.sessions.active", sessionManager,
+            this::getCurrentSessions)
+             .description("Number of active sessions")
+             .register(registry);
+    }
+}
+
+```
+
+### 1.2 Exam Results Service Dashboard
+
+#### Painéis Principais:
+
+1.  **Processing Queue Length**
+
+    -   Monitora tamanho da fila de processamento
+    -   Ajuda a identificar gargalos
+    -   Thresholds:
+        -   Warning: > 100 exames
+        -   Critical: > 500 exames
+2.  **Processing Time Distribution**
+
+    -   Heatmap mostrando distribuição de tempo
+    -   Cores indicam concentração de valores
+    -   Útil para identificar anomalias
+    -   Objetivos de SLA:
+        -   P50 < 200ms
+        -   P95 < 500ms
+        -   P99 < 1s
+
+#### Métricas Implementadas:
+
+```
+@Service
+public class ExamMetricsService {
+    private final MeterRegistry registry;
+
+    public void recordProcessingTime(String examType, long duration) {
+        Timer.builder("exam.processing.duration")
+             .tag("type", examType)
+             .description("Exam processing duration")
+             .publishPercentiles(0.5, 0.95, 0.99)
+             .register(registry)
+             .record(duration, TimeUnit.MILLISECONDS);
+    }
+
+    public void updateQueueSize(int size) {
+        Gauge.builder("exam.queue.size", () -> size)
+             .description("Current exam queue size")
+             .register(registry);
+    }
+}
+```
+
+2\. Performance Monitoring Dashboard
+------------------------------------
+
+### 2.1 Recursos do Sistema
+
+1.  **Memory Usage Panel**
+
+    -   Monitoramento por área de memória (Heap/Non-Heap)
+    -   Visualização de tendências
+    -   Thresholds de alerta:
+        -   Warning: 80% uso
+        -   Critical: 90% uso
+2.  **GC Pause Time**
+
+    -   Impacto das coletas de lixo
+    -   Identificação de problemas de memória
+    -   Métricas importantes:
+        -   Frequência de GC
+        -   Duração das pausas
+        -   Memória recuperada
+3.  **Thread States**
+
+    -   Visualização de estados das threads
+    -   Detecção de deadlocks
+    -   Monitoramento de thread pools
+    -   Estados monitorados:
+        -   Running
+        -   Blocked
+        -   Waiting
+        -   Timed Waiting
+
+### 2.2 Exemplo de Queries Prometheus
+
+## Taxa de erros por serviço
+sum(rate(http_server_requests_seconds_count{status=~"5.."}[5m])) by (service)
+/ sum(rate(http_server_requests_seconds_count[5m])) by (service) * 100
+
+## Latência média por endpoint
+rate(http_server_requests_seconds_sum[5m])
+/ rate(http_server_requests_seconds_count[5m])
+
+## Uso de memória JVM
+sum(jvm_memory_used_bytes{area="heap"}) by (application)
+
+
+3\. Correlação de Métricas
+--------------------------
+
+### 3.1 Dashboards de Correlação
+
+-   CPU vs Requisições
+-   Memória vs Usuários Ativos
+-   Latência vs Queue Size
+
+
+```
+{
+  "dashboard": {
+    "title": "Correlação de Métricas",
+    "panels": [
+      {
+        "title": "CPU vs Requests",
+        "targets": [
+          {
+            "expr": "sum(rate(container_cpu_usage_seconds_total[5m])) by (pod)",
+            "legendFormat": "CPU Usage"
+          },
+          {
+            "expr": "sum(rate(http_requests_total[5m])) by (pod)",
+            "legendFormat": "Request Rate"
+          }
+        ]
+      }
+    ]
+  }
+}
+
+```
+
+4\. Boas Práticas
+-----------------
+
+### 4.1 Organização de Dashboards
+
+-   Hierarquia clara (Overview → Serviço → Componente)
+-   Consistência em nomenclatura
+-   Tags padronizadas
+-   Documentação inline
+
+### 4.2 Alertas Efetivos
+
+-   Evitar falsos positivos
+-   Definir severidade clara
+-   Incluir contexto nas notificações
+-   Documentar ações de resposta
+
+### 4.3 Performance Metrics Checklist
+
+-   [ ]  Latência (P50, P95, P99)
+-   [ ]  Taxa de erros
+-   [ ]  Throughput
+-   [ ]  Utilização de recursos
+-   [ ]  Saturação de serviços
+-   [ ]  Métricas de negócio
+
+### 4.4 Retenção de Dados
+
+-   Hot data: 7 dias (alta resolução)
+-   Warm data: 30 dias (média resolução)
+-   Cold data: 1 ano (baixa resolução)
+
 ### Segurança e Compliance
 
 #### 1. AWS Security
