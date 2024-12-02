@@ -444,7 +444,206 @@ Consome:
 - Tempo de espera de mensagens: 20 segundos
 - Tamanho de lote: 10 mensagens
 
+Arquitetura de Segurança
+------------------------
+
+A arquitetura de segurança implementada segue um modelo em camadas, garantindo proteção em diferentes níveis:
+
+### Fluxo de Entrada
+
+1.  **Route 53** → **WAF** → **Shield** → **CloudFront** → **Application Load Balancer** → **Recursos VPC**
+
+```
+graph LR
+    A[Route 53] --> B[WAF]
+    B --> C[Shield]
+    C --> D[CloudFront]
+    D --> E[ALB]
+    E --> F[Recursos VPC]
+
+```
+
+### Recursos de Segurança
+
+#### WAF (Web Application Firewall)
+
+-   Proteção contra ataques web (XSS, SQLi)
+-   Regras de segurança personalizáveis
+-   Filtragem de tráfego malicioso
+-   Rate limiting
+
+#### Shield
+
+-   Proteção DDoS em camadas 3/4 e 7
+-   Mitigação automática de ataques
+-   Proteção da infraestrutura AWS
+
+#### GuardDuty
+
+-   Detecção de ameaças inteligente
+-   Monitoramento contínuo de:
+    -   CloudTrail Logs
+    -   VPC Flow Logs
+    -   DNS Queries
+    -   S3 Access Logs
+
+### Automação de Segurança
+
+#### EventBridge + Lambda
+
+O EventBridge atua como roteador de eventos, direcionando achados do GuardDuty para ações automatizadas via Lambda:
+
+##### Severidade Alta (7-10)
+
+-   Bloqueio automático de IPs suspeitos
+-   Isolamento de recursos comprometidos
+-   Notificação imediata para equipe
+-   Criação de tickets de incidente
+
+##### Severidade Média (4-6)
+
+-   Notificação para equipe
+-   Registro de ocorrência
+-   Monitoramento elevado
+
+##### Severidade Baixa (1-3)
+
+-   Registro em logs
+-   Monitoramento padrão
+
+### Security Hub
+
+Centraliza a visibilidade de segurança:
+
+-   Avaliações de conformidade
+-   Análise de configurações
+-   Integração com AWS Config
+-   Monitoramento de Security Groups
+
+### Monitoramento e Logs
+
+#### CloudTrail
+
+-   Auditoria de atividades AWS
+-   Armazenamento em S3
+-   Integração com CloudWatch Logs
+-   Análise via Athena
+
+#### CloudWatch
+
+-   Métricas de segurança
+-   Dashboards personalizados
+-   Alertas configuráveis
+-   Integração com SNS
+
+### Melhores Práticas Implementadas
+
+1.  **Security Groups**
+
+    -   Princípio de menor privilégio
+    -   Revisão periódica de regras
+    -   Documentação de mudanças
+    -   Monitoramento de alterações
+2.  **Networking**
+
+    -   Segmentação de rede
+    -   VPC endpoints
+    -   Network ACLs
+    -   Encrypted traffic only
+3.  **Identity & Access**
+
+    -   IAM roles específicas
+    -   MFA obrigatório
+    -   Rotação de credenciais
+    -   Auditoria regular
+
+### Resposta a Incidentes
+
+```
+graph TD
+    A[Detecção] --> B[Avaliação]
+    B --> C[Contenção]
+    C --> D[Erradicação]
+    D --> E[Recuperação]
+    E --> F[Lições Aprendidas]
+
+```
+
+1.  **Detecção**
+
+    -   GuardDuty
+    -   CloudWatch Alerts
+    -   Security Hub
+2.  **Automação**
+
+    -   EventBridge Rules
+    -   Lambda Functions
+    -   SNS Notifications
+3.  **Documentação**
+
+    -   Tickets automáticos
+    -   Logs centralizados
+    -   Relatórios de incidentes
+
+### Contatos de Segurança
+
+-   **Emergências**: [email/telefone]
+-   **Reportar Vulnerabilidade**: [email/formulário]
+-   **Equipe de Segurança**: [canal de comunicação]
+
+### Atualizações de Segurança
+
+-   Revisão mensal de configurações
+-   Atualizações semanais de regras
+-   Testes trimestrais de resposta
+-   Auditorias semestrais
+
 ### Monitoramento e Observabilidade
+
+**Utilizando ferramentas como Elastic stack, Prometheus e Grafana, segue os PRÓS de manter a Stack Completa para logs, métricas e alarmes:**
+
+1.  **Observabilidade Completa**
+
+-   Visão 360° do ambiente
+-   Correlação entre diferentes fontes
+-   Troubleshooting eficiente
+-   Análise profunda de problemas
+-   Monitoramento em tempo real
+
+1.  **Flexibilidade**
+
+-   Queries poderosas (PromQL)
+-   Visualizações customizadas
+-   Integração com múltiplas fontes
+-   Adaptabilidade a diferentes casos
+-   Extensibilidade
+
+1.  **Maturidade das Ferramentas**
+
+-   Comunidade ativa
+-   Documentação robusta
+-   Plugins e integrações
+-   Casos de uso comprovados
+-   Suporte empresarial disponível
+
+1.  **Casos de Uso Específicos**
+
+```
+graph TD
+    A[Use Cases]
+    A --> B[Prometheus]
+    A --> C[Elastic Stack]
+    A --> D[Grafana]
+
+    B --> E[Métricas de Aplicação]
+    B --> F[Alertas em Tempo Real]
+
+    C --> G[Análise de Logs]
+    C --> H[APM]
+
+    D --> I[Dashboards Unificados]
+    D --> J[Visualização de Dados]
+```
 
 #### Métricas Principais
 - Taxa de processamento
@@ -483,31 +682,6 @@ Consome:
    - Útil para dimensionamento de recursos
    - Histórico de 24h para análise de padrões
    - Correlacionar com uso de memória
-
-#### Métricas Chave:
-```
-@Component
-public class AccountMetrics {
-    private final MeterRegistry registry;
-
-    public AccountMetrics(MeterRegistry registry) {
-        this.registry = registry;
-
-        // Contador de requisições
-        Counter.builder("accounts.requests.total")
-              .tag("endpoint", "/login")
-              .description("Total number of requests")
-              .register(registry);
-
-        // Gauge para sessões ativas
-        Gauge.builder("accounts.sessions.active", sessionManager,
-            this::getCurrentSessions)
-             .description("Number of active sessions")
-             .register(registry);
-    }
-}
-
-```
 
 ### 1.2 Exam Results Service Dashboard
 
